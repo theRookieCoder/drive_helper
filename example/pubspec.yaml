@@ -1,0 +1,17 @@
+name: example
+description: An example app for drive_helper
+publish_to: "none"
+
+version: 1.0.0
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  drive_helper:
+    path: ../
+
+flutter:
+  uses-material-design: true

@@ -1,8 +1,9 @@
 name: drive_helper
-description: An easy API for using Google Drive
-version: 0.1.0
+description: An easy to use library for using Google Drive and Google sign in
+version: 1.1.0
 author: theRookieCoder
-homepage:
+homepage: https://github.com/theRookieCoder/drive_helper
+repository: https://github.com/theRookieCoder/drive_helper
 
 environment:
   sdk: ">=2.12.0 <3.0.0"
@@ -12,3 +13,4 @@ dependencies:
     sdk: flutter
   google_sign_in: ^5.0.2
   googleapis: ^2.0.0
+  url_launcher: ^6.0.3

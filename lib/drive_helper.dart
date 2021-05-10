@@ -7,14 +7,62 @@ import 'package:googleapis/drive/v3.dart'
     show DriveApi, File, Media, DownloadOptions;
 import 'dart:convert' show ascii;
 import 'GoogleAuthClient.dart';
+import 'package:url_launcher/url_launcher.dart' show launch;
 
-/// DriveHelperMimeTypes let you choose a simple mime type for file creation and exporting
 class _DriveHelperMimeTypes {
-  // Regular MIME types
+  _DriveHelperFileMimeTypes get files => _DriveHelperFileMimeTypes();
+  _DriveHelperExportMimeTypes get export => _DriveHelperExportMimeTypes();
+}
 
+/// DriveHelperExportMimeTypes let you choose a simple mime type for exporting Google Doc files
+class _DriveHelperExportMimeTypes {
+  /// Plain text
+  ///
+  /// For presentations and documents
+  final text = "text/plain";
+
+  /// PDF format
+  ///
+  /// For documents, spreadsheets, drawing(images), and presentations
+  final pdf = "application/pdf";
+
+  /// CSV format
+  ///
+  /// For spreadsheets (first sheet only)
+  final csv = "text/csv";
+
+  /// MS Excel format
+  ///
+  /// For spreadsheets
+  final excel =
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+  /// JPEG format
+  ///
+  /// For drawing(images)
+  final jpeg = "image/jpeg";
+
+  /// PNG format
+  ///
+  /// For drawing(images)
+  final png = "image/png";
+
+  /// SVG format
+  ///
+  /// For drawing(images)
+  final svg = "image/svg+xml";
+
+  /// JSON format
+  ///
+  /// For app scripts
+  final json = "application/vnd.google-apps.script+json";
+}
+
+/// DriveHelperMimeTypes let you choose a simple mime type for file creation
+class _DriveHelperFileMimeTypes {
   /// File
   ///
-  /// You may provide a file extension with the file name and Drive will convert the mime type later
+  /// You may provide a file extension with the file name and Drive will convert the file type later
   ///
   /// For example, if you create a file with this mime type and call it `test.csv`, that file will convert into a Google Sheets file
   ///
@@ -23,32 +71,6 @@ class _DriveHelperMimeTypes {
 
   /// Folder
   final folder = "application/vnd.google-apps.folder";
-
-  /// Image
-  final image = "application/vnd.google-apps.photo";
-
-  /// Video
-  final video = "application/vnd.google-apps.video";
-
-  /// Unknown/undetermined
-  final unknown = "application/vnd.google-apps.unknown	";
-
-  // Google Apps
-
-  /// Google Docs
-  final gdoc = "application/vnd.google-apps.document";
-
-  /// Google Forms
-  final gform = "application/vnd.google-apps.form";
-
-  /// Google Slides
-  final gslides = "application/vnd.google-apps.presentation";
-
-  /// Google Sites
-  final gsites = "application/vnd.google-apps.site";
-
-  /// Google Sheets
-  final gsheets = "application/vnd.google-apps.spreadsheet";
 }
 
 /// DriveHelperScope lets you choose from 4 simple scopes of data access for Google Drive
@@ -133,29 +155,69 @@ class DriveHelper {
 
   /// Creates a new file
   ///
-  /// Must provide a [fileName], and a [mime] type from `DriveHelper.mime`
+  /// Must provide a [fileName], and a [mime] type from `DriveHelper.mime.files`
   ///
   /// Returns the fileID of the file created, store this to use this file in the future
-  Future<String> createFile(String fileName, String mime) async {
+  Future<String> createFile(
+    String fileName,
+    String mime, [
+    String text = "",
+  ]) async {
     var file = new File();
     file.name = fileName;
     file.mimeType = mime;
-    file = await driveAPI.files.create(file);
+
+    Media mediaStream = Media(
+      Future.value(
+        List.from(ascii.encode(text)).cast<int>().toList(),
+      ).asStream().asBroadcastStream(),
+      text.length,
+    );
+
+    file = await driveAPI.files.create(file, uploadMedia: mediaStream);
     return file.id!;
+  }
+
+  /// Open the file in the relevant editor or viewer in a browser
+  ///
+  /// Must provide [fileID] of the file to open
+  Future<void> openFile(String fileID) async {
+    final file = await driveAPI.files.get(fileID) as File;
+    launch(file.webViewLink!);
+  }
+
+  /// Get data of a file
+  ///
+  /// Must provide [fileID] of file to get data from
+  ///
+  /// Returns data of file
+  Future<String?> getData(String fileID) async {
+    final file = await driveAPI.files.get(
+      fileID,
+      downloadOptions: DownloadOptions.fullMedia,
+    ) as Media;
+    String? fileData;
+    await file.stream.listen((event) {
+      fileData = String.fromCharCodes(event);
+    }).asFuture();
+    return fileData;
   }
 
   /// Append data to an existing file
   ///
   /// Must provide the [fileID] of a file and the [data] to append to the file
   ///
+  /// You may also provide a [mime] type which is the format to export. This defaults to `DriveHelper.mime.export.text`
+  ///
   /// Optionally, you can provide a seperator which is what must be added between the existing data and the provided data.
   /// Defaults to a newline (\n)
   Future<void> appendFile(
     String fileID,
     String newData, [
+    String mime = "text/plain",
     String seperator = '\n',
   ]) async {
-    String? data = await exportFileData(fileID, "text/plain");
+    String? data = await exportFileData(fileID, mime);
     late String finalData;
     if (data != null) {
       finalData = data + seperator + newData;
