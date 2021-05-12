@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.1]
+
+- Removed author label in pubspec.yaml
+- Made the README.md a lot better
+- Renamed the docs folder to doc
+
 ## [1.2.0]
 
 API:
