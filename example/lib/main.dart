@@ -170,7 +170,7 @@ class _HomePageState extends State<HomePage> {
                     await driveHelper.appendFile(
                       fileID,
                       tec.text,
-                      DriveHelper.mime.export.csv,
+                      mime: DriveHelper.mime.export.csv,
                     );
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text("File appended"),
