@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.2]
+
+- Added the ability to specify parents to files in `createFile()`
+
 ## [1.2.1]
 
 - Removed author label in pubspec.yaml

@@ -170,11 +170,13 @@ class DriveHelper {
   Future<String> createFile(
     String fileName,
     String mime, [
+    List<String>? parents,
     String text = "",
   ]) async {
     var file = new File();
     file.name = fileName;
     file.mimeType = mime;
+    file.parents = parents;
 
     Media mediaStream = Media(
       Future.value(
