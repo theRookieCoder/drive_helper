@@ -137,8 +137,11 @@ class DriveHelper {
   Future<void> signInAndInit(List<String> scopes) async {
     // Sign in
     signIn = GoogleSignIn.standard(scopes: scopes);
-    GoogleSignInAccount? testAccount =
-        await signIn.signInSilently() ?? await signIn.signIn();
+    late GoogleSignInAccount? testAccount;
+
+    await signIn.isSignedIn()
+        ? testAccount = await signIn.signInSilently() ?? await signIn.signIn()
+        : testAccount = await signIn.signIn();
 
     if (testAccount != null) {
       account = testAccount;
@@ -152,6 +155,12 @@ class DriveHelper {
 
     driveAPI = DriveApi(authClient);
   }
+
+  /// Mark the current user as being in the signed out state
+  Future<void> signOut() async => signIn.signOut();
+
+  /// Disconnect the user from the app and revokes all authentication between the user and this app
+  Future<void> disconnect() async => signIn.disconnect();
 
   /// Creates a new file
   ///
@@ -217,7 +226,7 @@ class DriveHelper {
     String mime = "text/plain",
     String seperator = '\n',
   ]) async {
-    String? data = await exportFileData(fileID, mime);
+    String? data = await exportFile(fileID, mime);
     late String finalData;
     if (data != null) {
       finalData = data + seperator + newData;
@@ -258,7 +267,7 @@ class DriveHelper {
   /// Export a file's data in the intended format/mime type
   ///
   /// Must provide a [fileID] and the [mime] type of the export format from `DriveApi.mime`
-  Future<String?> exportFileData(String fileID, String mime) async {
+  Future<String?> exportFile(String fileID, String mime) async {
     Media? fileMedia = await driveAPI.files.export(
       fileID,
       mime,

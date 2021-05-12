@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0]
+
+API:
+- Added API documentation to complement dartdocs
+- Drive helper now interactively signs in if the user is signed out
+- Added sign out and disconnect methods to the API
+- Renamed `exportFileData` to `exportFile`
+
+Example app:
+- Added sign out and disconnect functionality to the app in the account page
+- Added flutter phoenix to restart the app after sign out or disconnect
+
 ## [1.1.0]
 
 - Updated `pubspec.yaml`

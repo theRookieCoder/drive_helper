@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:drive_helper/drive_helper.dart';
+import 'package:flutter_phoenix/flutter_phoenix.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(Phoenix(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -213,6 +214,20 @@ class _HomePageState extends State<HomePage> {
                   driveHelper.email,
                   style: Theme.of(context).textTheme.headline4,
                 ),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  await driveHelper.signOut();
+                  Phoenix.rebirth(context);
+                },
+                child: Text("Sign out"),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  await driveHelper.disconnect();
+                  Phoenix.rebirth(context);
+                },
+                child: Text("Disconnect"),
               ),
             ],
           ),
