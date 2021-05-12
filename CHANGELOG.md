@@ -1,9 +1,12 @@
 # Changelog
 
+## [1.2.3]
+
+- Changed all positional optional arguments to named optional arguments
+
 ## [1.2.2]
 
 - Added the ability to specify parents to files in `createFile()`
-- Changed all positional optional arguments to named optional arguments
 
 ## [1.2.1]
 
