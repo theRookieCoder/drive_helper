@@ -169,12 +169,14 @@ class DriveHelper {
   /// Returns the fileID of the file created, store this to use this file in the future
   Future<String> createFile(
     String fileName,
-    String mime, [
+    String mime, {
+    List<String>? parents,
     String text = "",
-  ]) async {
+  }) async {
     var file = new File();
     file.name = fileName;
     file.mimeType = mime;
+    file.parents = parents;
 
     Media mediaStream = Media(
       Future.value(
@@ -222,10 +224,10 @@ class DriveHelper {
   /// Defaults to a newline (\n)
   Future<void> appendFile(
     String fileID,
-    String newData, [
+    String newData, {
     String mime = "text/plain",
     String seperator = '\n',
-  ]) async {
+  }) async {
     String? data = await exportFile(fileID, mime);
     late String finalData;
     if (data != null) {
