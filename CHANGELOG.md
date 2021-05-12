@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.4]
+
+- Fixed erranous `getFileID` function
+
 ## [1.2.3]
 
 - Changed all positional optional arguments to named optional arguments

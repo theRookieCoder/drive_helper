@@ -290,20 +290,20 @@ class DriveHelper {
   /// Must provide a [fileName] to search with
   Future<List<String>> getFileID(String fileName) async {
     final search = await driveAPI.files.list(
-      q: "name=$fileName and trashed=false",
+      q: "name='$fileName' and trashed=false",
       spaces: signIn.scopes.contains(DriveApi.driveAppdataScope)
           ? "appDataFolder"
           : "drive",
     );
 
-    List<String> result = List.empty();
+    List<String> result = List.empty(growable: true);
 
     if (search.files!.length == 0) {
       throw "File not found";
     } else {
-      search.files!.forEach((file) {
+      for (var file in search.files!) {
         result.add(file.id!);
-      });
+      }
     }
 
     return result;
