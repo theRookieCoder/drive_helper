@@ -6,8 +6,19 @@ import 'package:google_sign_in/google_sign_in.dart'
 import 'package:googleapis/drive/v3.dart'
     show DriveApi, File, Media, DownloadOptions;
 import 'dart:convert' show ascii;
-import 'GoogleAuthClient.dart';
 import 'package:url_launcher/url_launcher.dart' show launch;
+import 'package:http/http.dart'
+    show BaseClient, Client, StreamedResponse, BaseRequest;
+
+class _GoogleAuthClient extends BaseClient {
+  final Map<String, String> _headers;
+  final Client _client = new Client();
+
+  _GoogleAuthClient(this._headers);
+
+  Future<StreamedResponse> send(BaseRequest request) =>
+      _client.send(request..headers.addAll(_headers));
+}
 
 class _DriveHelperMimeTypes {
   _DriveHelperFileMimeTypes get files => _DriveHelperFileMimeTypes();
@@ -151,7 +162,7 @@ class DriveHelper {
 
     // Initialise driveAPI
     final authHeaders = await account.authHeaders;
-    final authClient = GoogleAuthClient(authHeaders);
+    final authClient = _GoogleAuthClient(authHeaders);
 
     driveAPI = DriveApi(authClient);
   }
@@ -202,14 +213,16 @@ class DriveHelper {
   /// Must provide [fileID] of file to get data from
   ///
   /// Returns data of file
-  Future<String?> getData(String fileID) async {
+  Future<String> getData(String fileID) async {
     final file = await driveAPI.files.get(
       fileID,
       downloadOptions: DownloadOptions.fullMedia,
     ) as Media;
-    String? fileData;
+    String fileData = "";
     await file.stream.listen((event) {
-      fileData = String.fromCharCodes(event);
+      event is List<int>
+          ? fileData += String.fromCharCodes(event)
+          : throw event;
     }).asFuture();
     return fileData;
   }

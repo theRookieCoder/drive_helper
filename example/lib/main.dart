@@ -181,7 +181,31 @@ class _HomePageState extends State<HomePage> {
                 child: Text("Append data to file"),
               ),
               ElevatedButton(
-                onPressed: () async => driveHelper.openFile(fileID),
+                onPressed: () async {
+                  if (fileID != "") {
+                    String fileData =
+                        await driveHelper.getData(fileID).catchError((e) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(e.toString()),
+                        behavior: SnackBarBehavior.floating,
+                        duration: Duration(seconds: 10),
+                      ));
+                    });
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: Text("File data from GET"),
+                          content: Text(fileData),
+                        );
+                      },
+                    );
+                  }
+                },
+                child: Text("GET file data"),
+              ),
+              ElevatedButton(
+                onPressed: () async => await driveHelper.openFile(fileID),
                 child: Text("View file"),
               ),
               Padding(

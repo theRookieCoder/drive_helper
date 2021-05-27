@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.5]
+
+- Edited README.md file
+
+Library:
+- Fixed [this issue](https://github.com/theRookieCoder/drive_helper/issues/1) about `getData()`
+- Upgraded dependencies
+- Added error checking to `getData` 
+- Made `GoogleAuthClient` private
+
+Example:
+- Added `GET data` button
+
 ## [1.2.4]
 
 - Fixed erranous `getFileID` function

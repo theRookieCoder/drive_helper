@@ -7,7 +7,7 @@ Drive Helper is better than using `google_sign_in` and `googleapis` because it i
 
 ## Get started
 
-Follow the instruction in the [documentation](docs/drive) to start using Drive Helper in your Flutter project, or migrate to it for an existing app using Drive API
+Follow the instruction in the [documentation](https://github.com/theRookieCoder/drive_helper/blob/main/doc/DriveHelper.md) to start using Drive Helper in your Flutter project, or migrate to it for an existing app using Drive API
 
 ## Features
 
@@ -53,6 +53,9 @@ class MyApp extends StatelessWidget {
   }
 }
 ```
+
+## API Reference
+See the [doc](https://github.com/theRookieCoder/drive_helper/blob/main/doc/DriveHelper.md) in Github for thorough API reference
 
 ## Compatibility
 
