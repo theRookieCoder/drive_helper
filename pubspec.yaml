@@ -1,7 +1,7 @@
 name: drive_helper
 description: An easy to use library for using Google Drive and Google sign in
-version: 1.2.5
-homepage: https://github.com/theRookieCoder/drive_helper
+version: 1.2.6
+homepage: https://pub.dev/packages/drive_helper
 repository: https://github.com/theRookieCoder/drive_helper
 
 environment:

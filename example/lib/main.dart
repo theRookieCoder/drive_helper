@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Roboto',
       ),
       home: FutureBuilder(
-        future: driveHelper.signInAndInit([DriveHelper.scopes.app]),
+        future: driveHelper.signInAndInit([DriveScopes.app]),
         builder: (context, snapshot) {
           // Future done and no errors
           if (snapshot.connectionState == ConnectionState.done &&
@@ -121,7 +121,7 @@ class _HomePageState extends State<HomePage> {
                   if (fileID == "") {
                     final localFileID = await driveHelper.createFile(
                       "drive_helper.csv",
-                      DriveHelper.mime.files.file,
+                      FileMimeTypes.file,
                     );
                     setState(() => fileID = localFileID);
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -170,7 +170,7 @@ class _HomePageState extends State<HomePage> {
                     await driveHelper.appendFile(
                       fileID,
                       tec.text,
-                      mime: DriveHelper.mime.export.csv,
+                      mime: ExportMimeTypes.csv,
                     );
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text("File appended"),

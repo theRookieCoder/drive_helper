@@ -1,11 +1,22 @@
 # Changelog
 
+## [1.2.6]
+
+- Edited text in README.md
+- Made the doc into a tutorial file and moved all API References to the dartdocs
+- Deprecated `DriveHelper.mime.files`. Use `FileMimeTypes`
+- Deprecated `DriveHelper.mime.export`. Use `ExportMimeTypes`
+- Deprecated `DriveHelper.scopes`. Use `DriveScopes`
+- Updated dart docs in `drive_helper.dart` to add missing comments from `doc/DriveHelper.md`
+- Updated example app to abide by the deprecation notices
+- Made `exportFile()` fix [issue #1](https://github.com/theRookieCoder/drive_helper/issues/1) as well
+
 ## [1.2.5]
 
 - Edited README.md file
 
 Library:
-- Fixed [this issue](https://github.com/theRookieCoder/drive_helper/issues/1) about `getData()`
+- Fixed [issue #1](https://github.com/theRookieCoder/drive_helper/issues/1) about `getData()`
 - Upgraded dependencies
 - Added error checking to `getData` 
 - Made `GoogleAuthClient` private

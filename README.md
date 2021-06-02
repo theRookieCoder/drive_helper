@@ -1,22 +1,22 @@
 # Drive Helper
 > This project is open source on [Github](https://www.github.com/theRookieCoder/drive_helper)  
-> By [theRookieCoder](https://www.github.com/theRookieCoder)
+> Made by [theRookieCoder](https://www.github.com/theRookieCoder)
 
 Drive Helper is an easy to use library for interfacing with Google Drive and Google sign in.  
-Drive Helper is better than using `google_sign_in` and `googleapis` because it is much more intuitive for you as a developer to use and integrate into a project. If you already use Drive API, then you probably wrote a wrapper class anyways for initialisation and read/write so why not use Drive Helper as a drop in replacement?
+Drive Helper is better than using `google_sign_in` and `googleapis` because it is much more intuitive for you as a developer to use and integrate into a project. If you already use Drive API, then you probably wrote a wrapper class anyways for initialisation and read/write so why not use Drive Helper as a (maybe) drop in replacement?
 
 ## Get started
 
-Follow the instruction in the [documentation](https://github.com/theRookieCoder/drive_helper/blob/main/doc/DriveHelper.md) to start using Drive Helper in your Flutter project, or migrate to it for an existing app using Drive API
+Follow the instruction in the [get started guide](https://github.com/theRookieCoder/drive_helper/blob/main/doc/DriveHelper.md) to start using Drive Helper in your Flutter project, or migrate to it for an existing app using Drive API
 
 ## Features
 
 - Signs in to Google and maintains the account seperately from your app
-- Exposed drive API and Google sign in & sign in account for limitless possibility
+- Exposed DriveAPI, GoogleSignIn & GoogleSignInAccount to help with possibly missing functionality
 - 2 methods for reading, 2 for writing, one for creating files, and one for deleting them
 - Predefined mime types for use in creating and exporting files
-- Predefined scopes also exist for you to easily select a scope to create your Google account with
-- Getters defined for getting the account's name, email address, and avatar
+- Predefined scopes for easily selecting one to create your Google account with
+- Getters for the account's name, email address, and avatar
 
 ## Examples
 
@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       // Theming etc, etc
       body: FutureBuilder(
-        future: driveHelper.signInAndInit(DriveHelper.scopes.app),
+        future: driveHelper.signInAndInit(DriveScopes.app),
         builder: (snapshot, context) {
           if (snapshot.connectionState == ConnectionState.done &&
             !snapshot.hasError) {
@@ -55,7 +55,7 @@ class MyApp extends StatelessWidget {
 ```
 
 ## API Reference
-See the [doc](https://github.com/theRookieCoder/drive_helper/blob/main/doc/DriveHelper.md) in Github for thorough API reference
+See the [generated Dartdocs](https://pub.dev/documentation/drive_helper/latest/) in pub for thorough API reference
 
 ## Compatibility
 
