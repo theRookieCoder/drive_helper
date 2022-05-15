@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.0]
+
+- Update dependencies
+- Remove example
+- Remove deprecated items
+
 ## [1.2.6]
 
 - Edited text in README.md
