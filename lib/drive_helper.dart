@@ -6,9 +6,9 @@ import 'package:google_sign_in/google_sign_in.dart'
 import 'package:googleapis/drive/v3.dart'
     show DriveApi, File, Media, DownloadOptions;
 import 'dart:convert' show ascii;
-import 'package:url_launcher/url_launcher.dart' show launch;
 import 'package:http/http.dart'
     show BaseClient, Client, StreamedResponse, BaseRequest;
+import 'package:url_launcher/url_launcher_string.dart';
 
 class _GoogleAuthClient extends BaseClient {
   final Map<String, String> _headers;
@@ -19,12 +19,6 @@ class _GoogleAuthClient extends BaseClient {
   Future<StreamedResponse> send(BaseRequest request) {
     return _client.send(request..headers.addAll(_headers));
   }
-}
-
-@Deprecated("For files, use `FileMimeTypes`. For exports, use `ExportMimeTypes")
-class _DriveHelperMimeTypes {
-  FileMimeTypes get files => FileMimeTypes._();
-  ExportMimeTypes get export => ExportMimeTypes._();
 }
 
 /// ExportMimeTypes lets you choose a mime type for exporting Google Doc files
@@ -156,14 +150,6 @@ class DriveHelper {
   /// Get a widget that shows the Google account's avatar
   Widget get avatar => GoogleUserCircleAvatar(identity: account);
 
-  /// Mime types for use in creating and exporting files
-  @Deprecated("Use `FileMimeTypes` or `ExportMimeTypes`")
-  static _DriveHelperMimeTypes get mime => _DriveHelperMimeTypes();
-
-  /// Scopes for use in `signInAndInit`
-  @Deprecated("Use `DriveScopes` instead")
-  static DriveScopes get scopes => DriveScopes._();
-
   // Methods
 
   /// Empty constructor
@@ -259,7 +245,7 @@ class DriveHelper {
   /// Must provide [fileID] of the file to open
   Future<void> openFile(String fileID) async {
     final file = await driveAPI.files.get(fileID) as File;
-    launch(file.webViewLink!);
+    launchUrlString(file.webViewLink!);
   }
 
   /// GET the data of a file
@@ -274,9 +260,7 @@ class DriveHelper {
     ) as Media;
     String fileData = "";
     await file.stream.listen((event) {
-      event is List<int>
-          ? fileData += String.fromCharCodes(event)
-          : throw event;
+      fileData += String.fromCharCodes(event);
     }).asFuture();
     return fileData;
   }
@@ -352,9 +336,7 @@ class DriveHelper {
 
     String fileData = "";
     await fileMedia!.stream.listen((event) {
-      event is List<int>
-          ? fileData += String.fromCharCodes(event)
-          : throw event;
+      fileData += String.fromCharCodes(event);
     }).asFuture();
     return fileData;
   }
