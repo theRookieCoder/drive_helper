@@ -155,7 +155,6 @@ class DriveHelper {
   /// Empty constructor
   ///
   /// MUST CALL `signInAndInit` ASYNCHRONOUSLY ON THE INSTANCE TO INITIALIZE
-  /// PIS
   DriveHelper();
 
   /// MUST BE CALLED ASYNCHRONOUSLY AFTER INSTANTIATION
