@@ -8,11 +8,12 @@ import 'package:googleapis/drive/v3.dart'
 import 'dart:convert' show ascii;
 import 'package:http/http.dart'
     show BaseClient, Client, StreamedResponse, BaseRequest;
-import 'package:url_launcher/url_launcher_string.dart';
 
+/// A [BaseClient] that stores the Google authentication headers,
+/// and uses them to authenticate each request
 class _GoogleAuthClient extends BaseClient {
   final Map<String, String> _headers;
-  final Client _client = new Client();
+  final Client _client = Client();
 
   _GoogleAuthClient(this._headers);
 
@@ -21,351 +22,232 @@ class _GoogleAuthClient extends BaseClient {
   }
 }
 
-/// ExportMimeTypes lets you choose a mime type for exporting Google Doc files
-class ExportMimeTypes {
-  /// Don't instantiate externally
-  ExportMimeTypes._();
-
-  /// Plain text
+/// File MIME types that Google Drive uses
+abstract class FileMIMETypes {
+  /// # File
   ///
-  /// For presentations and documents
-  static final text = "text/plain";
-
-  /// PDF format
-  ///
-  /// For documents, spreadsheets, drawings(images), and presentations
-  static final pdf = "application/pdf";
-
-  /// CSV format
-  ///
-  /// For spreadsheets (first sheet only)
-  static final csv = "text/csv";
-
-  /// MS Excel format
-  ///
-  /// For spreadsheets
-  static final excel =
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-  /// JPEG format
-  ///
-  /// For drawing(images)
-  static final jpeg = "image/jpeg";
-
-  /// PNG format
-  ///
-  /// For drawing(images)
-  static final png = "image/png";
-
-  /// SVG format
-  ///
-  /// For drawing(images)
-  static final svg = "image/svg+xml";
-
-  /// JSON format
-  ///
-  /// For app scripts
-  static final json = "application/vnd.google-apps.script+json";
-}
-
-/// FileMimeTypes lets you choose a mime type for creating files
-class FileMimeTypes {
-  /// Don't instantiate externally
-  FileMimeTypes._();
-
-  /// File
-  ///
-  /// You may provide a file extension with the file name and Drive will convert
-  /// the file type later
+  /// You may provide a file extension with the file name,
+  /// and the file type will be automatically inferred.
   ///
   /// For example, if you create a file with this mime type and call it
-  /// `test.csv`, that file will convert into a Google Sheets file
+  /// `test.csv`, it will be automatically converted into a Google Sheets file.
   ///
-  /// Do not worry however, as you can choose to export a Google Sheets file to
-  /// the csv format
+  /// You can still get back a CSV file by choosing the export type.
   static final file = "application/vnd.google-apps.file";
 
-  /// Folder
+  /// # Folder
   ///
-  /// To put a file in to a folder, specify the folder's file ID as the parent
-  /// of the file
+  /// To put a file in to a folder,
+  /// specify the file's parent as the parent folder's file ID.
   static final folder = "application/vnd.google-apps.folder";
 }
 
-/// DriveScopes lets you choose from 4 scopes of data access for Google Drive
-class DriveScopes {
-  /// Don't instantiate externally
-  DriveScopes._();
-
+/// Scopes of data access
+///
+/// [Official Documentation](https://developers.google.com/drive/api/guides/api-specific-auth#scopes)
+abstract class DriveScopes {
   /// See, create, edit, and delete all Google Drive files created by anyone
   ///
-  /// Only use this if absolutely necessary.
-  /// `app` should be plenty for most purposes
+  /// WARNING: Only use this if absolutely necessary.
+  /// [app] should be enough for most purposes.
   static final full = DriveApi.driveScope;
 
-  /// See, create, edit, and delete all Google Drive files created by this app
-  /// only
+  /// See, create, edit, and delete all Google Drive files created by this app only
   ///
-  /// This is the recommended scope for most apps
+  /// This is the recommended scope for most apps.
   static final app = DriveApi.driveFileScope;
 
-  /// See, create, edit, and delete files that can only be created and viewed by
-  /// this app
+  /// See, create, edit, and delete files that can only be created and viewed by this app
   ///
-  /// Perfect for configuration files, databases, etc
+  /// Perfect for configuration files, databases, etc.
   ///
-  /// Files stored in this special folder cannot be seen by the user but can be
-  /// deleted by the user
+  /// Files stored in this special folder cannot be seen by the user,
+  /// but can be deleted by them.
   static final appData = DriveApi.driveAppdataScope;
 
-  /// Be able to read (not write) all Google Drive files created by anyone
+  /// Only read, not edit or create all Google Drive files created by anyone
   static final read = DriveApi.driveReadonlyScope;
 }
 
-/// DriveHelper
-///
-/// Warning: All errors encountered are directly passed. It is the developer's
-/// responsibility to inform the user that the intended action has not been
-/// completed successfully
 class DriveHelper {
-  // Variables
+  /// Internal Google APIs Drive v3 instance
+  DriveApi driveAPI;
 
-  /// The Google Drive API
-  late DriveApi driveAPI;
+  /// Signed in Google account
+  GoogleSignInAccount account;
 
-  /// The Google account
-  late GoogleSignInAccount account;
+  /// Google account sign in configuration settings
+  GoogleSignIn signIn;
 
-  /// The Google account settings
-  late GoogleSignIn signIn;
-
-  // Getters
-
-  /// Get the Google account's display name, assuming it exists
+  /// Signed in Google account's display name, which might not exist
   String? get name => account.displayName;
 
-  /// Get the Google account's email
+  /// Signed in Google account's email
   String get email => account.email;
 
-  /// Get a widget that shows the Google account's avatar
+  /// Widget that shows the signed in Google account's avatar
   Widget get avatar => GoogleUserCircleAvatar(identity: account);
 
-  // Methods
-
   /// Empty constructor
+  DriveHelper._construct(this.driveAPI, this.account, this.signIn);
+
+  /// Sign in to Google Drive and intialise [DriveHelper].
+  /// Provide [scopes] from [DriveScopes], or custom ones by passing strings.
   ///
-  /// MUST CALL `signInAndInit` ASYNCHRONOUSLY ON THE INSTANCE TO INITIALIZE
-  DriveHelper();
+  /// Consider using a `FutureBuilder` to
+  /// asynchronously await on this method and show a loading screen,
+  /// and show an error page if this method fails.
+  static Future<DriveHelper> initialise(List<String> scopes) async {
+    final signIn = GoogleSignIn.standard(scopes: scopes);
 
-  /// MUST BE CALLED ASYNCHRONOUSLY AFTER INSTANTIATION
-  ///
-  /// Must provide valid [scopes] from `DriveScopes`
-  ///
-  /// The app must not continue to use the helper instance if this function
-  /// errored out
-  ///
-  /// Consider using a `FutureBuilder` to show an error page if this method
-  /// fails
-  Future<void> signInAndInit(List<String> scopes) async {
-    // Sign in
-    signIn = GoogleSignIn.standard(scopes: scopes);
-    late GoogleSignInAccount? testAccount;
+    final account = (await signIn.isSignedIn()
+        ? await signIn.signInSilently() ?? await signIn.signIn()
+        : await signIn.signIn());
 
-    await signIn.isSignedIn()
-        ? testAccount = await signIn.signInSilently() ?? await signIn.signIn()
-        : testAccount = await signIn.signIn();
+    // ignore: unnecessary_statements
+    account == null ? throw "Account authentication failed" : null;
 
-    if (testAccount != null) {
-      account = testAccount;
-    } else {
-      throw "Account was null";
-    }
-
-    // Initialise driveAPI
-    final authHeaders = await account.authHeaders;
-    final authClient = _GoogleAuthClient(authHeaders);
-
-    driveAPI = DriveApi(authClient);
+    return DriveHelper._construct(
+      DriveApi(_GoogleAuthClient(await account.authHeaders)),
+      account,
+      signIn,
+    );
   }
 
   /// Mark the current user as being in the signed out state
   ///
   /// You should restart the app afterwards using a package such as
-  /// flutter_phoenix
+  /// [`flutter_phoenix`](https://pub.dev/packages/flutter_phoenix).
   Future<void> signOut() async => signIn.signOut();
 
-  /// Disconnect the user from the app and revokes all authentication between
+  /// Disconnect the user from the app, and revoke all authentication between
   /// the user and this app
   ///
-  ///
-  /// Requires the user to sign in and accept the scopes the next time the user
-  /// tries to sign in
+  /// Requires the user to sign in and accept requested permissions
+  /// the next time the user tries to sign in.
   ///
   /// You should restart the app afterwards using a package such as
-  /// flutter_phoenix
+  /// [`flutter_phoenix`](https://pub.dev/packages/flutter_phoenix).
   Future<void> disconnect() async => signIn.disconnect();
 
-  /// Creates a new file
+  /// Create a new file with [fileName], and a [mime] type
+  /// that is from [FileMIMETypes] or a custom string
   ///
-  /// Must provide a [fileName], and a [mime] type from `FileMimeTypes`
+  /// Optionally, specify the ID(s) of the [parents] folder(s).
   ///
-  /// You can also providd some text to initialise the file with (e.g. header
-  /// data/boilerplate)
+  /// You can provide some text to initialise the file with
+  /// (e.g. header data or boilerplate)
   ///
-  /// Returns the fileID of the file created, store this to use this file in the
-  /// future
+  /// Returns the ID of the file created,
+  /// store this to refer to this file in the future.
   Future<String> createFile(
     String fileName,
     String mime, {
     List<String>? parents,
     String text = "",
   }) async {
-    var file = new File();
-    file.name = fileName;
-    file.mimeType = mime;
-    file.parents = parents;
-
-    Media mediaStream = Media(
-      Future.value(
-        List.from(ascii.encode(text)).cast<int>().toList(),
-      ).asStream().asBroadcastStream(),
-      text.length,
-    );
-
-    file = await driveAPI.files.create(file, uploadMedia: mediaStream);
-    return file.id!;
+    return (await driveAPI.files.create(
+      File(
+        name: fileName,
+        mimeType: mime,
+        parents: parents,
+      ),
+      uploadMedia: Media(
+        Stream.value(ascii.encode(text)),
+        text.length,
+      ),
+    ))
+        .id!;
   }
 
-  /// Open the file in the relevant editor or viewer in a browser
-  ///
-  /// THis uses url_launcher to launch the webViewLink property of a file. This
-  /// may be null, in which case a null error is thrown
-  ///
-  /// Must provide [fileID] of the file to open
-  Future<void> openFile(String fileID) async {
-    final file = await driveAPI.files.get(fileID) as File;
-    launchUrlString(file.webViewLink!);
-  }
-
-  /// GET the data of a file
-  ///
-  /// Must provide [fileID] of file to get data from
-  ///
-  /// Returns data of the file in text format
+  /// GET the data of [fileID]'s file as a string
   Future<String> getData(String fileID) async {
     final file = await driveAPI.files.get(
       fileID,
       downloadOptions: DownloadOptions.fullMedia,
     ) as Media;
+
     String fileData = "";
-    await file.stream.listen((event) {
-      fileData += String.fromCharCodes(event);
+    await file.stream.listen((bytes) {
+      fileData += String.fromCharCodes(bytes);
     }).asFuture();
     return fileData;
   }
 
-  /// Append data to an existing file
+  /// Append [data] to an existing file of [fileID]
   ///
-  /// Must provide the [fileID] of a file and the [data] to append to the file
+  /// You may also provide the [mime] type of the format to export the file in,
+  /// this defaults to plain text.
   ///
-  /// You may also provide a [mime] type of the format to export the file in.
-  /// This defaults to `ExportMimeTypes.text`
-  ///
-  /// Optionally, you can provide a seperator which is what must be added
-  /// between the existing data and the provided data.
-  /// This defaults to a newline (\n)
+  /// Optionally, you can provide a [seperator] which will be added
+  /// between the existing data and the provided [data].
+  /// This defaults to a newline `\n`.
   Future<void> appendFile(
     String fileID,
-    String newData, {
+    String data, {
     String mime = "text/plain",
     String seperator = '\n',
   }) async {
-    String? data = await exportFile(fileID, mime);
-    late String finalData;
-    if (data != null) {
-      finalData = data + seperator + newData;
-    } else {
-      throw "Could not receive data";
-    }
-    updateFile(fileID, finalData);
+    final oldData = (await exportFile(fileID, mime))!;
+    updateFile(fileID, oldData + seperator + data);
   }
 
-  /// Deletes a file
+  /// Deletss the file of [fileID]
   ///
-  /// Must provide a [fileID] of the file to delete
-  ///
-  /// It may seem obvious but please use this command with extreme caution,
-  /// especially with `DriveScopes.full`
+  /// Please use with caution, especially with [DriveScopes.full].
   Future<void> deleteFile(String fileID) => driveAPI.files.delete(fileID);
 
-  /// Overwrite an existing file with new data
+  /// Overwrite an existing file of [fileID] with new data
   ///
-  /// Must provide the [fileID] of a file and [data] to overwrite with
+  /// Please use this command with caution,
+  /// as this is equivalent to deleting the existing data in the file.
   ///
-  /// It may not be obvious but please use this command with extreme caution as
-  /// this is equivalent to deleting the existing the existing data in the file
-  ///
-  /// If you need to append data to the end of a file, use `appendFile`
-  Future<void> updateFile(String fileID, String data) async {
-    final dataList = List.from(ascii.encode(data)).cast<int>().toList();
+  /// If you need to append data to the end of a file, use [appendFile].
+  Future<void> updateFile(String fileID, String data) => driveAPI.files.update(
+        File(),
+        fileID,
+        uploadMedia: Media(
+          Stream.value(ascii.encode(data)),
+          data.length,
+        ),
+      );
 
-    Stream<List<int>> mediaStream =
-        Future.value(dataList).asStream().asBroadcastStream();
-
-    var media = new Media(
-      mediaStream,
-      dataList.length,
-    );
-
-    await driveAPI.files.update(new File(), fileID, uploadMedia: media);
-  }
-
-  /// Export a Google Doc file's data in the intended format/mime type
-  ///
-  /// Returns the exported data in text format
-  ///
-  /// Must provide the [fileID] of the file to export and the [mime] type of the
-  /// export format from `ExportMimeTypes`
+  /// Export a Google Workspace file of [fileID] in the provided [mime] type
   Future<String?> exportFile(String fileID, String mime) async {
-    Media? fileMedia = await driveAPI.files.export(
+    final fileMedia = await driveAPI.files.export(
       fileID,
       mime,
       downloadOptions: DownloadOptions.fullMedia,
     );
 
     String fileData = "";
-    await fileMedia!.stream.listen((event) {
-      fileData += String.fromCharCodes(event);
+    await fileMedia!.stream.listen((bytes) {
+      fileData += String.fromCharCodes(bytes);
     }).asFuture();
     return fileData;
   }
 
-  /// Get the fileID of a file from its name.
+  /// Get the file ID of a file from its [fileName]
   ///
-  /// If multiple files with the same name exist, all their IDs will be returned
-  /// in a list
+  /// If multiple files with the same name exist,
+  /// their IDs will be returned in a list.
   ///
-  /// This only searches for items that are not trashed
-  ///
-  /// Must provide a [fileName] to search with
+  /// This only searches for items that are not trashed.
   Future<List<String>> getFileID(String fileName) async {
     final search = await driveAPI.files.list(
       q: "name='$fileName' and trashed=false",
-      spaces: signIn.scopes.contains(DriveApi.driveAppdataScope)
-          ? "appDataFolder"
-          : "drive",
+      spaces: "drive" +
+          (signIn.scopes.contains(DriveApi.driveAppdataScope)
+              ? ", appDataFolder"
+              : ""),
     );
 
     List<String> result = List.empty(growable: true);
-
-    if (search.files!.length == 0) {
+    if (search.files == null || search.files!.length == 0) {
       throw "File not found";
     } else {
-      for (var file in search.files!) {
-        result.add(file.id!);
-      }
+      search.files!.forEach((file) => result.add(file.id!));
     }
-
     return result;
   }
 }

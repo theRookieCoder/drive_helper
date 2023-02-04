@@ -1,6 +1,6 @@
 # Drive Helper tutorial
 
-This is a tutorial on how to set up your app to use DriveHelper and the common methods needed. If you're looking for API reference, see the [generated Dartdocs](https://pub.dev/documentation/drive_helper/latest/) in the pub page.
+This is a tutorial on how to set up your app to use Drive Helper and the common methods needed. If you're looking for the API reference, see the [generated Dartdocs](https://pub.dev/documentation/drive_helper/latest/).
 
 - [Drive Helper tutorial](#drive-helper-tutorial)
   - [Using Drive Helper in your app](#using-drive-helper-in-your-app)
@@ -11,15 +11,22 @@ This is a tutorial on how to set up your app to use DriveHelper and the common m
     - [Setting up Drive Helper in your Flutter app](#setting-up-drive-helper-in-your-flutter-app)
   - [API tutorial](#api-tutorial)
     - [Working with files](#working-with-files)
+      - [`createFile()`](#createfile)
+      - [`deleteFile()`](#deletefile)
+      - [`getFileID()`](#getfileid)
     - [Reading a file](#reading-a-file)
+      - [`getData()`](#getdata)
+      - [`exportFile()`](#exportfile)
     - [Writing to a file](#writing-to-a-file)
-    - [Working with Google accounts](#working-with-google-accounts)
+      - [`appendFile()`](#appendfile)
+      - [`updateData()`](#updatedata)
+    - [Working with the Google account](#working-with-the-google-account)
 
 ## Using Drive Helper in your app
 
 ### Adding Firebase to your app
 
-In this 'tutorial' you will learn how to enable Google sign in for your project by using Firebase and enable the Drive API for your project
+In this 'tutorial' you will learn how to enable Google sign in and the Drive API for your project by using Firebase.
 
 1. Make sure to have a Google account handy for Firebase and testing
 2. Firebase is super easy to use and can also provide (optional) analytics without any additional steps
@@ -27,116 +34,141 @@ In this 'tutorial' you will learn how to enable Google sign in for your project 
 4. Select 'Add project'
 5. Enter a name for your project, this is just an alias and is not displayed publicly
 6. Next, you will be asked whether you would like to enable Google Analytics. While Analytics is useful, it may not be necessary. You can enable or disable this later if you can't decide
-7. Click next and your project will be created
-8. Firebase projects are really just a wrapper for _much_ more complicated Google Cloud projects. So you can actually go to the [Google Cloud console ](https://console.cloud.google.com) and you will see the same project there. **Don't delete the Google Cloud project acccidently**
-9.  Once Firebase is finished setting up your project, select the platform which you would like to use your Flutter app in
+7. Click next, and your project will be created
+8. A Firebase project is really just a wrapper around a (_much_ more complex) Google Cloud project. So, you can actually go to the [Google Cloud console](https://console.cloud.google.com), and you will see the same project there. **Don't delete the Google Cloud project as it is tied to the Firebase project**
+9.  Once Firebase is finished setting up your project, select the platform(s) you would like to use your Flutter app in
 
 #### For Android
 
 1. Under package name, enter your Android app's `applicationID`
-2. You `applicationID` can be found under `flutter_project/android/app/build.gradle` under
-```
+2. The `applicationID` can be found in `android/app/build.gradle` under
+```groovy
 android {
   defaultConfig {
     applicationID: "com.devname.appname"
   }
 }
 ```
-1. If this hasn't been filled out yet, or contains some example IDs, fill in your own. See the Android [website](https://developer.android.com/studio/build/application-id.html) for intructions on making the `applicationID`
-2. You can enter anything you want under app nickname
-3. Under debug signing certificate, enter the SHA-1 of the machine you will be compiling on (this is dependant on the device you're compiling with so you will have to add new SHA-1s if you switch your computer)
-4. Even though it says optional, this is required to enable Google sign in
-5. To find out how to get this SHA-1, go [here](https://developers.google.com/android/guides/client-auth)
-6. Next, click the download button and save the `google-services.json` file under `flutter_project/android/app`. This file is _very very_ important and if it doesn't exist, the Google sign in API will not know what app is asking the user to sign in and will error out
-7. You can skip the next page because `pub` does this for you automatically
-8.  Next, click continue to console
+1. If this hasn't been filled out yet, or contains a placeholder ID, fill in your own. See the Android [website](https://developer.android.com/studio/build/application-id.html) for intructions on making an `applicationID`
+2. You can enter anything you want under the app nickname
+3. Under debug signing certificate, enter the SHA-1 hash of the machine you will be compiling on (this depends on the device you're compiling with so you will have to add new hashes if you switch your computer)
+4. Even though it says it is optional, _this step is required_ to enable Google sign in
+5. To find out how to get this SHA-1 hash, go [here](https://developers.google.com/android/guides/client-auth)
+6. Next, click the download button and save the `google-services.json` file under `flutter_project/android/app`. This file is _very_ important and if it doesn't exist, the Google sign in API will error out
+7. You can skip the next page because `pub` does this step for you automatically
+8. Next, click continue to console
 
 #### For iOS
 
 1. Enter your target app's (called `Runner` in Flutter iOS apps) bundle ID
-2. You will find this in the iOS project's general tab in the target's page in Xcode
-3. If this is not filled in yet, then do so
+2. You will find this in the iOS project's general tab in the targets page in Xcode
+3. If this is not filled in yet, do so
 4. You can provide a nickname and the App Store ID if you have published the app
 5. In the next page, download the `GoogleService-Info.plist` and save it in the `flutter_project/ios/Runner` folder
-6. This file is _very very_ important and if it doesn't exist, the Google sign in API will not know what app is asking the user to sign in and will error out
+6. This file is _very_ important and if it doesn't exist, the Google sign in API will error out
 7. You can skip steps 3 and 4 in the setup process because `pub` does them for you automatically
 
 ### Enabling Google sign in and Google Drive API
 
-12. After configuring the apps, you will have to configure the
-    - Firebase project to allow Google Authentication
-    - Google Cloud project to enable the Drive API
-1.  First, in your project's Firebase console, there should be an item in the sidebar called Authentication, click on that
-2.  Click on get started, then go to the sign-in method tab
-3.  Click on the Edit button to the right of the Google option
-4.  Enable the Google sign in
-5.  Change the project public-facing-name to something that makes sense like `dev-name-project-name`, add your email address as a support email, then click save
-6.  Congratulations, you have enabled Google sign in for your project!
-7.  Now, you need to enable the Google Drive API in Google Cloud
-8.  Go to the [Google Cloud console](https://console.cloud.google.com) and select your Firebase project in the top-leftish dropdown menu
-9.  Are you extremely confused as too what you're seeing, that's why we use Firebase!
-10. Open the navigation menu and at the top there should be an option called APIs and services, click that
-11. At the top of this screen, click on `+ ENABLE APIS AND SERVICES` and search for 'drive'
-12. Click on the API called Google Drive API and click `ENABLE`
-13. Finally, after about half an hour, all you have done is enable Google sign in and the Drive API.
+After configuring the platform apps, you will have to configure the
+   - Firebase project to allow Google authentication
+   - Google Cloud project to enable the Drive API
+
+1. In your project's Firebase console, there should be an item in the sidebar called Authentication, click on that
+2. Click on get started, then go to the sign-in method tab
+3. Click on the Edit button to the right of the Google option
+4. Enable Google sign in
+5. Change the project's `public-facing-name` to something that makes sense like `dev-name-project-name`, add your email address as a support email, then click save
+6. Congratulations, you have enabled Google sign in for your project!
+
+Now, you need to enable the Google Drive API in Google Cloud
+
+1. Go to the [Google Cloud console](https://console.cloud.google.com) and select your Firebase project in the top-leftish dropdown menu
+2. Open the navigation menu and at the top, there should be an option called APIs and services, click that
+3. At the top of this screen, click on `+ ENABLE APIS AND SERVICES` and search for 'drive'
+4. Click on the Google Drive API and click `ENABLE`
 
 ### Setting up Drive Helper in your Flutter app
 
-For DriveHelper to function properly, you have to first instantiate it, then run `signInAndInit` to log in with Google and initialise the Drive API. Here are intructions for a simple implementation of that using `FutureBuilder`
+To use Drive Helper, you need to add it as a dependency, and run the `DriveHelper.initialise()` function to asynchronously sign in to Google and initialise the Drive API.
 
 1. Add drive_helper as a dependancy for your app by running `flutter pub add drive_helper` in your project folder
 2. In `main.dart` in `main()` in `runApp()` you will be providing a `StatelessWidget` as your app. I recommend using `flutter_phoenix` here to restart your app after log outs
-3. This app widget should return a `MaterialApp` or whatever Cupertino uses in its `build()` method
-4. In your `MaterialApp` or equivalent, instead of passing a homepage or whatever directly to its body, use a FutureBuilder. 
-5. You can take this project's [example app's](https://github.com/theRookieCoder/drive_helper/blob/main/example/lib/main.dart) `MyApp`'s build method as an example
-6. Before the build method, define a drive helper instance in the class. For example:
+3. In your `MaterialApp` or equivalent, enclose your UI in a `FutureBuilder` and pass an async anonymous function that runs `DriveHelper.initialise()` and assigns it to a state variable
+4. In the builder parameter, you should return 
+   - A progress indicator if the `Future` is completing
+   - An error page if the `Future` completed and errored out
+   - The homepage of your app only if the `Future` completed and has no errors
+
+Use the following code as an example:
+
 ```dart
 class App extends StatelessWidget {
-  // Important:
-  final driveHelper = DriveHelper();
+  late DriveHelper driveHelper;
 
   @override
   Widget build() {
     return FutureBuilder() {
-      ...
-      ...
+      future: () async => driveHelper = await driveHelper.initialise(
+        // Choose your required permission scopes
+      ),
+      builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+        if (snapshot.hasData) {
+          // Return your app's homepage
+        } else if (snapshot.hasError) {
+          // Return an error page
+        } else {
+          // Return a progress indicator like `CircularProgressIndicator`
+      }
     }
   }
 }
 ```
-6. Then in the `FutureBuilder`, you should pass the `driveHelper.signInAndInit(scope)` as the future
-7. In the build method of the `FutureBuilder`, you should return 
-   - A progress indicator if the Future is completing
-   - An error page if the Future completed and errored out
-   - The homepage of your app only if the Future completed and has no errors
-8. After that, you can carry on using the rest of DriveHelper methods
+
+After this, you can use the assigned state variable (`driveHelper` in this case) to access the Drive API
 
 ## API tutorial
   
 ### Working with files
 
-- To create a file, use `createFile()`
-- To delete a file, use `deleteFile()`
-- To get a file's file id fom its name, use `getFileID()`
+#### `createFile()`
+
+Create a file 
+
+#### `deleteFile()`
+
+Delete a file
+
+#### `getFileID()`
+
+Get a file's file ID fom its name
 
 ### Reading a file
 
-To read a file, there are multiple methods
+#### `getData()`
 
-- To get the raw data of the file, you can use `getData()`
-- To get the data of a Google Doc file (Sheets, Docs, Slides) in a more standard format (e.g. export Sheets file as csv), use `exportFile()`
+Get the raw data of the file
+
+#### `exportFile()`
+
+Get the data of a Google Workspace file (Sheets, Docs, Slides, etc) in a more standard format (e.g. export a Sheets file as csv).
 
 ### Writing to a file
 
-There are also multiple methods to write to a file
+#### `appendFile()`
 
-- To append data to the end of a file, you can use `appendFile()`
-- To overwrite all existing content with new data, you can use `updateData()`
+Append data to the end of a file
 
-### Working with Google accounts
+#### `updateData()`
 
-- You can get the `name`, `email`, and `avatar` of the Google accont using their respective getters
-- You can sign out the account with `signOut()`*
-- You can disconnect the account from your app using `disconnect()`*
+Overwrite all existing content with new data
 
-\* Do be sure to use a package like flutter_phoenix to restart the app after sign outs or disconnects
+### Working with the Google account
+
+Get the `name`, `email`, and `avatar` of the Google account using their respective getters.
+
+Temporarily sign out the account with `signOut()`.
+
+Fully disconnect the account from your app using `disconnect()`.
+
+Do be sure to use a package like [`flutter_phoenix`](https://pub.dev/packages/flutter_phoenix) to restart the app after sign outs and disconnects.

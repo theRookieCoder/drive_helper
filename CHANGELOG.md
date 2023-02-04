@@ -1,5 +1,17 @@
 # Changelog
 
+## `1.4.0`
+### 04.02.2023
+
+This update mostly focuses on improving the ergonomics than adding functionality.
+
+- Updated dependencies
+- Improved a lot of the documentation, readme, and tutorial
+- Moved `ExportMimeTypes` to `export_mime_types.dart` and split them into categories according to the [new documentation](https://developers.google.com/drive/api/guides/ref-export-formats)
+- Removed `DriveHelper.openFile()` as it is too unreliable
+- Made the `DriveHelper` class's constructor named and private, forcing use of the `DriveHelper.initialise()` function
+- Improved most of the internal code to be more concise
+
 ## [1.3.1]
 
 Update dependencies
