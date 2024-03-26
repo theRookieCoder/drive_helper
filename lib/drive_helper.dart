@@ -32,19 +32,19 @@ abstract class FileMIMETypes {
   /// For example, if you create a file with this mime type and call it
   /// `test.csv`, it will be automatically converted into a Google Sheets file.
   ///
-  /// You can still get back a CSV file by choosing the export type.
+  /// You can still get back a CSV file by choosing the appropriate export type.
   static final file = "application/vnd.google-apps.file";
 
   /// # Folder
   ///
-  /// To put a file in to a folder,
-  /// specify the file's parent as the parent folder's file ID.
+  /// To put a file into a folder,
+  /// specify the file's parent as the folder's file ID.
   static final folder = "application/vnd.google-apps.folder";
 }
 
 /// Scopes of data access
 ///
-/// [Official Documentation](https://developers.google.com/drive/api/guides/api-specific-auth#scopes)
+/// [Official Documentation](https://developers.google.com/drive/api/guides/api-specific-auth#drive-scopes)
 abstract class DriveScopes {
   /// See, create, edit, and delete all Google Drive files created by anyone
   ///
@@ -65,7 +65,7 @@ abstract class DriveScopes {
   /// but can be deleted by them.
   static final appData = DriveApi.driveAppdataScope;
 
-  /// Only read, not edit or create all Google Drive files created by anyone
+  /// Only read (not edit or create) all Google Drive files created by anyone
   static final read = DriveApi.driveReadonlyScope;
 }
 
@@ -73,19 +73,19 @@ class DriveHelper {
   /// Internal Google APIs Drive v3 instance
   DriveApi driveAPI;
 
-  /// Signed in Google account
+  /// The signed-in Google account
   GoogleSignInAccount account;
 
-  /// Google account sign in configuration settings
+  /// Google sign in configuration settings
   GoogleSignIn signIn;
 
-  /// Signed in Google account's display name, which might not exist
+  /// Signed-in account's display name
   String? get name => account.displayName;
 
-  /// Signed in Google account's email
+  /// Signed-in account's email address
   String get email => account.email;
 
-  /// Widget that shows the signed in Google account's avatar
+  /// A widget that shows the signed-in account's avatar
   Widget get avatar => GoogleUserCircleAvatar(identity: account);
 
   /// Empty constructor
@@ -95,8 +95,8 @@ class DriveHelper {
   /// Provide [scopes] from [DriveScopes], or custom ones by passing strings.
   ///
   /// Consider using a `FutureBuilder` to
-  /// asynchronously await on this method and show a loading screen,
-  /// and show an error page if this method fails.
+  /// asynchronously await on this method and show a loading screen
+  /// or an error page if this method fails.
   static Future<DriveHelper> initialise(List<String> scopes) async {
     final signIn = GoogleSignIn.standard(scopes: scopes);
 
@@ -104,8 +104,9 @@ class DriveHelper {
         ? await signIn.signInSilently() ?? await signIn.signIn()
         : await signIn.signIn());
 
-    // ignore: unnecessary_statements
-    account == null ? throw "Account authentication failed" : null;
+    if (account == null) {
+      throw "Account authentication failed";
+    }
 
     return DriveHelper._construct(
       DriveApi(_GoogleAuthClient(await account.authHeaders)),
@@ -116,18 +117,16 @@ class DriveHelper {
 
   /// Mark the current user as being in the signed out state
   ///
-  /// You should restart the app afterwards using a package such as
-  /// [`flutter_phoenix`](https://pub.dev/packages/flutter_phoenix).
+  /// You should prompt the user to sign in again, such as by restarting the app
   Future<void> signOut() async => signIn.signOut();
 
   /// Disconnect the user from the app, and revoke all authentication between
   /// the user and this app
   ///
-  /// Requires the user to sign in and accept requested permissions
+  /// Requires the user to sign in and accept the requested permissions
   /// the next time the user tries to sign in.
   ///
-  /// You should restart the app afterwards using a package such as
-  /// [`flutter_phoenix`](https://pub.dev/packages/flutter_phoenix).
+  /// You should prompt the user to sign in again, such as by restarting the app
   Future<void> disconnect() async => signIn.disconnect();
 
   /// Create a new file with [fileName], and a [mime] type
@@ -136,7 +135,7 @@ class DriveHelper {
   /// Optionally, specify the ID(s) of the [parents] folder(s).
   ///
   /// You can provide some text to initialise the file with
-  /// (e.g. header data or boilerplate)
+  /// (e.g. for headers or boilerplate)
   ///
   /// Returns the ID of the file created,
   /// store this to refer to this file in the future.
@@ -192,15 +191,15 @@ class DriveHelper {
     updateFile(fileID, oldData + seperator + data);
   }
 
-  /// Deletss the file of [fileID]
+  /// Delete the file of [fileID]
   ///
-  /// Please use with caution, especially with [DriveScopes.full].
+  /// Use with caution, especially with [DriveScopes.full]!
   Future<void> deleteFile(String fileID) => driveAPI.files.delete(fileID);
 
   /// Overwrite an existing file of [fileID] with new data
   ///
-  /// Please use this command with caution,
-  /// as this is equivalent to deleting the existing data in the file.
+  /// Use this command with caution,
+  /// as it is equivalent to deleting the existing data in the file.
   ///
   /// If you need to append data to the end of a file, use [appendFile].
   Future<void> updateFile(String fileID, String data) => driveAPI.files.update(
@@ -227,10 +226,7 @@ class DriveHelper {
     return fileData;
   }
 
-  /// Get the file ID of a file from its [fileName]
-  ///
-  /// If multiple files with the same name exist,
-  /// their IDs will be returned in a list.
+  /// Get the file ID(s) of the files with name [fileName]
   ///
   /// This only searches for items that are not trashed.
   Future<List<String>> getFileID(String fileName) async {
@@ -242,12 +238,10 @@ class DriveHelper {
               : ""),
     );
 
-    List<String> result = List.empty(growable: true);
     if (search.files == null || search.files!.length == 0) {
       throw "File not found";
     } else {
-      search.files!.forEach((file) => result.add(file.id!));
+      return search.files!.map((file) => file.id!).toList();
     }
-    return result;
   }
 }
