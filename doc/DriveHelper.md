@@ -134,7 +134,41 @@ After this, you can use the assigned state variable (`driveHelper` in this case)
 #### `createFile()`
 
 Create a file 
+```dart
+final imagePath = "$docPath/$imageName.jpg";
+if (File(imagePath).existsSync()) {
+  final existingFileID = await driveHelper
+      .getFileID("$imageName.jpg")
+      .then((files) => files.isNotEmpty ? files[0] : null)
+      .catchError((_) => null);
 
+  if (existingFileID == null) {
+    final imageBytes = await File(imagePath).readAsBytes();
+    await driveHelper!.createFile(
+      "$imageName.jpg",
+      "image/jpeg", // Correct MIME type for JPEG
+      parents: [imagesFolderID],
+      content: imageBytes,
+    );
+  }
+}
+```
+```dart
+final jsonData = jsonEncode(syncData);
+
+await driveHelper.updateFile(
+  await driveHelper!
+      .getFileID("app_settings.json")
+      .then((files) => files[0])
+      .catchError((error) async => await driveHelper!.createFile(
+      "app_settings.json",
+      "application/json",      // MIME type
+      parents: [appFolderID],
+      text: jsonEncode(syncData)   // JSON content
+  )),
+  jsonData,
+);
+```
 #### `deleteFile()`
 
 Delete a file

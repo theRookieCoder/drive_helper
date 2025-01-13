@@ -5,7 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart'
     show GoogleSignIn, GoogleSignInAccount, GoogleUserCircleAvatar;
 import 'package:googleapis/drive/v3.dart'
     show DriveApi, File, Media, DownloadOptions;
-import 'dart:convert' show ascii;
+import 'dart:convert';
 import 'package:http/http.dart'
     show BaseClient, Client, StreamedResponse, BaseRequest;
 
@@ -34,7 +34,6 @@ abstract class FileMIMETypes {
   ///
   /// You can still get back a CSV file by choosing the appropriate export type.
   static final file = "application/vnd.google-apps.file";
-
   /// # Folder
   ///
   /// To put a file into a folder,
@@ -140,11 +139,20 @@ class DriveHelper {
   /// Returns the ID of the file created,
   /// store this to refer to this file in the future.
   Future<String> createFile(
-    String fileName,
-    String mime, {
-    List<String>? parents,
-    String text = "",
-  }) async {
+      String fileName,
+      String mime, {
+        List<String>? parents, // Folder IDs to put the file in
+        List<int>? content, // For binary data like images
+        String text = "", // For text data like JSON
+      }) async {
+    final encodedText = utf8.encode(text);
+    // Determine whether to use text or binary content
+    final mediaStream = content != null
+        ? Stream.value(content) // Binary data stream for images
+        : Stream.value(encodedText); // Text stream for JSON or other text files
+
+    final mediaLength = content?.length ?? encodedText.length;
+
     return (await driveAPI.files.create(
       File(
         name: fileName,
@@ -152,8 +160,8 @@ class DriveHelper {
         parents: parents,
       ),
       uploadMedia: Media(
-        Stream.value(ascii.encode(text)),
-        text.length,
+        mediaStream,
+        mediaLength,
       ),
     ))
         .id!;
@@ -172,6 +180,21 @@ class DriveHelper {
     }).asFuture();
     return fileData;
   }
+
+  /// GET the data of [fileID]'s file as bytes (suitable for images)
+  Future<List<int>> getDataBytes(String fileID) async {
+    final file = await driveAPI.files.get(
+      fileID,
+      downloadOptions: DownloadOptions.fullMedia,
+    ) as Media;
+
+    final List<int> fileBytes = [];
+    await file.stream.listen((bytes) {
+      fileBytes.addAll(bytes); // Collect binary data
+    }).asFuture();
+    return fileBytes;
+  }
+
 
   /// Append [data] to an existing file of [fileID]
   ///
@@ -206,7 +229,7 @@ class DriveHelper {
         File(),
         fileID,
         uploadMedia: Media(
-          Stream.value(ascii.encode(data)),
+          Stream.value(utf8.encode(data)),
           data.length,
         ),
       );
