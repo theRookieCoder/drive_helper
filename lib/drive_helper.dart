@@ -1,32 +1,29 @@
 library drive_helper;
 
-import 'package:flutter/material.dart' show Widget;
 import 'package:google_sign_in/google_sign_in.dart'
     show GoogleSignIn, GoogleSignInAccount, GoogleUserCircleAvatar;
 import 'package:googleapis/drive/v3.dart'
     show DriveApi, File, Media, DownloadOptions;
-import 'dart:convert' show ascii;
+import 'dart:convert' show utf8;
 import 'package:http/http.dart'
     show BaseClient, Client, StreamedResponse, BaseRequest;
 
-/// A [BaseClient] that stores the Google authentication headers,
+/// A [BaseClient] that stores the Google authentication headers
 /// and uses them to authenticate each request
 class _GoogleAuthClient extends BaseClient {
-  final Map<String, String> _headers;
-  final Client _client = Client();
-
   _GoogleAuthClient(this._headers);
 
-  Future<StreamedResponse> send(BaseRequest request) {
-    return _client.send(request..headers.addAll(_headers));
-  }
+  final Map<String, String> _headers;
+  final _client = Client();
+
+  @override
+  Future<StreamedResponse> send(BaseRequest request) =>
+      _client.send(request..headers.addAll(_headers));
 }
 
-/// File MIME types that Google Drive uses
+/// MIME types that Google Drive uses for files
 abstract class FileMIMETypes {
-  /// # File
-  ///
-  /// You may provide a file extension with the file name,
+  /// If you provide a file extension with the file name,
   /// and the file type will be automatically inferred.
   ///
   /// For example, if you create a file with this mime type and call it
@@ -37,8 +34,8 @@ abstract class FileMIMETypes {
 
   /// # Folder
   ///
-  /// To put a file into a folder,
-  /// specify the file's parent as the folder's file ID.
+  /// To put a file into a folder, create a file using this type,
+  /// and specify the file's parent as the folder created.
   static final folder = "application/vnd.google-apps.folder";
 }
 
@@ -48,14 +45,14 @@ abstract class FileMIMETypes {
 abstract class DriveScopes {
   /// See, create, edit, and delete all Google Drive files created by anyone
   ///
-  /// WARNING: Only use this if absolutely necessary.
+  /// Only use this if absolutely necessary,
   /// [app] should be enough for most purposes.
-  static final full = DriveApi.driveScope;
+  static const full = DriveApi.driveScope;
 
   /// See, create, edit, and delete all Google Drive files created by this app only
   ///
   /// This is the recommended scope for most apps.
-  static final app = DriveApi.driveFileScope;
+  static const app = DriveApi.driveFileScope;
 
   /// See, create, edit, and delete files that can only be created and viewed by this app
   ///
@@ -63,14 +60,14 @@ abstract class DriveScopes {
   ///
   /// Files stored in this special folder cannot be seen by the user,
   /// but can be deleted by them.
-  static final appData = DriveApi.driveAppdataScope;
+  static const appData = DriveApi.driveAppdataScope;
 
   /// Only read (not edit or create) all Google Drive files created by anyone
-  static final read = DriveApi.driveReadonlyScope;
+  static const read = DriveApi.driveReadonlyScope;
 }
 
-class DriveHelper {
-  /// Internal Google APIs Drive v3 instance
+final class DriveHelper {
+  /// Google API Drive v3 instance
   DriveApi driveAPI;
 
   /// The signed-in Google account
@@ -80,23 +77,20 @@ class DriveHelper {
   GoogleSignIn signIn;
 
   /// Signed-in account's display name
-  String? get name => account.displayName;
+  get name => account.displayName;
 
   /// Signed-in account's email address
-  String get email => account.email;
+  get email => account.email;
 
   /// A widget that shows the signed-in account's avatar
-  Widget get avatar => GoogleUserCircleAvatar(identity: account);
+  get avatar => GoogleUserCircleAvatar(identity: account);
 
-  /// Empty constructor
+  /// Private constructor
   DriveHelper._construct(this.driveAPI, this.account, this.signIn);
 
-  /// Sign in to Google Drive and intialise [DriveHelper].
-  /// Provide [scopes] from [DriveScopes], or custom ones by passing strings.
+  /// Sign in to Google Drive and intialise [DriveHelper]
   ///
-  /// Consider using a `FutureBuilder` to
-  /// asynchronously await on this method and show a loading screen
-  /// or an error page if this method fails.
+  /// You can find some standard [scopes] in [DriveScopes].
   static Future<DriveHelper> initialise(List<String> scopes) async {
     final signIn = GoogleSignIn.standard(scopes: scopes);
 
@@ -117,25 +111,25 @@ class DriveHelper {
 
   /// Mark the current user as being in the signed out state
   ///
-  /// You should prompt the user to sign in again, such as by restarting the app
+  /// After calling, you must prompt the user to sign in again.
   Future<void> signOut() async => signIn.signOut();
 
-  /// Disconnect the user from the app, and revoke all authentication between
-  /// the user and this app
+  /// Disconnect the user from the app,
+  /// and revoke all permissions the user provided
   ///
-  /// Requires the user to sign in and accept the requested permissions
+  /// Requires the user to sign in and accept the permissions
   /// the next time the user tries to sign in.
   ///
-  /// You should prompt the user to sign in again, such as by restarting the app
-  Future<void> disconnect() async => signIn.disconnect();
+  /// After calling, you must prompt the user to sign in again.
+  Future<void> disconnect() => signIn.disconnect();
 
   /// Create a new file with [fileName], and a [mime] type
   /// that is from [FileMIMETypes] or a custom string
   ///
-  /// Optionally, specify the ID(s) of the [parents] folder(s).
+  /// Optionally, specify the ID(s) of the parent folder(s) in [parents].
   ///
   /// You can provide some text to initialise the file with
-  /// (e.g. for headers or boilerplate)
+  /// (e.g. for headers or boilerplate).
   ///
   /// Returns the ID of the file created,
   /// store this to refer to this file in the future.
@@ -145,18 +139,18 @@ class DriveHelper {
     List<String>? parents,
     String text = "",
   }) async {
-    return (await driveAPI.files.create(
+    final file = await driveAPI.files.create(
       File(
         name: fileName,
         mimeType: mime,
         parents: parents,
       ),
       uploadMedia: Media(
-        Stream.value(ascii.encode(text)),
+        Stream.value(utf8.encode(text)),
         text.length,
       ),
-    ))
-        .id!;
+    );
+    return file.id!;
   }
 
   /// GET the data of [fileID]'s file as a string
@@ -187,7 +181,7 @@ class DriveHelper {
     String mime = "text/plain",
     String seperator = '\n',
   }) async {
-    final oldData = (await exportFile(fileID, mime))!;
+    final oldData = await exportFile(fileID, mime);
     updateFile(fileID, oldData + seperator + data);
   }
 
@@ -198,21 +192,21 @@ class DriveHelper {
 
   /// Overwrite an existing file of [fileID] with new data
   ///
-  /// Use this command with caution,
-  /// as it is equivalent to deleting the existing data in the file.
+  /// This effectively deletes the existing data in the file,
+  /// so be careful when using it.
   ///
   /// If you need to append data to the end of a file, use [appendFile].
   Future<void> updateFile(String fileID, String data) => driveAPI.files.update(
         File(),
         fileID,
         uploadMedia: Media(
-          Stream.value(ascii.encode(data)),
+          Stream.value(utf8.encode(data)),
           data.length,
         ),
       );
 
-  /// Export a Google Workspace file of [fileID] in the provided [mime] type
-  Future<String?> exportFile(String fileID, String mime) async {
+  /// Exports the file of [fileID] in the provided [mime] type
+  Future<String> exportFile(String fileID, String mime) async {
     final fileMedia = await driveAPI.files.export(
       fileID,
       mime,
@@ -226,19 +220,22 @@ class DriveHelper {
     return fileData;
   }
 
-  /// Get the file ID(s) of the files with name [fileName]
+  /// Gets the file ID(s) of files named [fileName]
   ///
-  /// This only searches for items that are not trashed.
-  Future<List<String>> getFileID(String fileName) async {
+  /// Only searches for items that are trashed if [trashed] is true.
+  Future<List<String>> getFileID(String fileName,
+      {bool trashed = false}) async {
     final search = await driveAPI.files.list(
-      q: "name='$fileName' and trashed=false",
+      q: "name='$fileName' and trashed=$trashed",
+
+      // ignore: prefer_interpolation_to_compose_strings
       spaces: "drive" +
           (signIn.scopes.contains(DriveApi.driveAppdataScope)
               ? ", appDataFolder"
               : ""),
     );
 
-    if (search.files == null || search.files!.length == 0) {
+    if (search.files == null || search.files!.isEmpty) {
       throw "File not found";
     } else {
       return search.files!.map((file) => file.id!).toList();
